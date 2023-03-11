@@ -1,5 +1,5 @@
 - 👋 Hi, I’m @gielfull
 - 👀 I’m interested in Front End and Mobile technologies.
-- 🌱 I’m currently learning React Native
-- 💞️ I’m looking to collaborate on React and React Native projects
-- 📫 DM me on twitter @migueldeleon_
+- 🌱 I’m currently learning Swift and TypeScript
+- 💞️ I’m looking to collaborate on React projects
+- 📫 DM me on twitter @gfuldev
