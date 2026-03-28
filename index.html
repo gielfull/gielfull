@@ -1,1 +1,846 @@
-<h1>Hello...</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio - macOS Style</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --menu-bar-bg: rgba(50, 50, 50, 0.95);
+            --dock-bg: rgba(255, 255, 255, 0.3);
+            --window-bg: rgba(255, 255, 255, 0.85);
+            --window-border: rgba(0, 0, 0, 0.1);
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --accent: #007aff;
+            --red: #ff5f57;
+            --yellow: #ffbd2e;
+            --green: #28c840;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+        }
+
+        /* Desktop Background */
+        .desktop {
+            position: absolute;
+            top: 28px;
+            left: 0;
+            right: 0;
+            bottom: 80px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080"><rect fill="%23667eea" width="1920" height="1080"/><circle cx="960" cy="540" r="400" fill="%23764ba2" opacity="0.3"/></svg>');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* Menu Bar */
+        .menu-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 28px;
+            background: var(--menu-bar-bg);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 10000;
+            color: white;
+            font-size: 13px;
+        }
+
+        .menu-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .menu-logo {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .menu-items {
+            display: flex;
+            gap: 15px;
+        }
+
+        .menu-item {
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .menu-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 12px;
+        }
+
+        /* Windows */
+        .window {
+            position: absolute;
+            min-width: 400px;
+            min-height: 300px;
+            background: var(--window-bg);
+            backdrop-filter: blur(30px) saturate(180%);
+            border-radius: 10px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 100;
+        }
+
+        .window.active {
+            display: flex;
+            animation: windowOpen 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes windowOpen {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .window.maximized {
+            top: 38px !important;
+            left: 10px !important;
+            right: 10px !important;
+            bottom: 90px !important;
+            width: auto !important;
+            height: auto !important;
+            border-radius: 0;
+        }
+
+        .window-header {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            cursor: move;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .window-control {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .window-control.close { background: var(--red); }
+        .window-control.minimize { background: var(--yellow); }
+        .window-control.maximize { background: var(--green); }
+
+        .window-control:hover {
+            filter: brightness(1.2);
+        }
+
+        .window-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .window-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            color: var(--text-primary);
+        }
+
+        .window-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .window-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .window-content::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        /* Dock */
+        .dock {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--dock-bg);
+            backdrop-filter: blur(30px) saturate(180%);
+            border-radius: 16px;
+            padding: 8px 16px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            z-index: 9999;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .dock-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .dock-icon:hover {
+            transform: translateY(-12px) scale(1.1);
+        }
+
+        .dock-icon.active::before {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+        }
+
+        .dock-tooltip {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .dock-icon:hover .dock-tooltip {
+            opacity: 1;
+        }
+
+        /* Content Styles */
+        h2 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        h3 {
+            font-size: 20px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        p {
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .about-section {
+            display: flex;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .profile-pic {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+        }
+
+        .project-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .project-card {
+            background: rgba(255, 255, 255, 0.6);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+        }
+
+        .project-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .project-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .tag {
+            background: rgba(102, 126, 234, 0.15);
+            color: #667eea;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .skill-item {
+            background: rgba(255, 255, 255, 0.6);
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .skill-item h4 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .skill-item p {
+            margin: 0;
+            font-size: 13px;
+        }
+
+        .contact-links {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .contact-link {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 10px;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all 0.3s;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .contact-link:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateX(4px);
+        }
+
+        .contact-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        /* Welcome Message */
+        .welcome-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .welcome-message h1 {
+            font-size: 64px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .welcome-message p {
+            font-size: 24px;
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .window {
+                min-width: 90vw;
+                max-width: 90vw;
+            }
+
+            .dock {
+                gap: 8px;
+                padding: 6px 12px;
+            }
+
+            .dock-icon {
+                width: 48px;
+                height: 48px;
+                font-size: 24px;
+            }
+
+            .menu-items {
+                display: none;
+            }
+
+            .skills-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .about-section {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .welcome-message h1 {
+                font-size: 36px;
+            }
+
+            .welcome-message p {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Menu Bar -->
+    <div class="menu-bar">
+        <div class="menu-left">
+            <div class="menu-logo">🍎</div>
+            <div class="menu-items">
+                <div class="menu-item">Portfolio</div>
+                <div class="menu-item">File</div>
+                <div class="menu-item">Edit</div>
+                <div class="menu-item">View</div>
+            </div>
+        </div>
+        <div class="menu-right">
+            <span id="current-time"></span>
+        </div>
+    </div>
+
+    <!-- Desktop -->
+    <div class="desktop">
+        <div class="welcome-message">
+            <h1>Welcome to My Portfolio</h1>
+            <p>Click the dock icons below to explore</p>
+        </div>
+    </div>
+
+    <!-- About Window -->
+    <div class="window" id="about-window" style="top: 100px; left: 100px; width: 600px; height: 500px;">
+        <div class="window-header">
+            <div class="window-controls">
+                <div class="window-control close" onclick="closeWindow('about-window')"></div>
+                <div class="window-control minimize"></div>
+                <div class="window-control maximize" onclick="toggleMaximize('about-window')"></div>
+            </div>
+            <div class="window-title">About Me</div>
+        </div>
+        <div class="window-content">
+            <div class="about-section">
+                <div class="profile-pic">👤</div>
+                <div>
+                    <h2>Hi, I'm Your Name</h2>
+                    <p>I'm a passionate developer and designer with a keen eye for creating beautiful, functional digital experiences. With expertise in modern web technologies, I bring ideas to life through clean code and thoughtful design.</p>
+                    <p>My approach combines technical excellence with creative problem-solving, ensuring every project not only looks great but performs exceptionally. I'm constantly learning and adapting to new technologies to deliver cutting-edge solutions.</p>
+                    <p>When I'm not coding, you'll find me exploring new design trends, contributing to open-source projects, or sharing knowledge with the developer community.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Projects Window -->
+    <div class="window" id="projects-window" style="top: 120px; left: 150px; width: 700px; height: 600px;">
+        <div class="window-header">
+            <div class="window-controls">
+                <div class="window-control close" onclick="closeWindow('projects-window')"></div>
+                <div class="window-control minimize"></div>
+                <div class="window-control maximize" onclick="toggleMaximize('projects-window')"></div>
+            </div>
+            <div class="window-title">Projects</div>
+        </div>
+        <div class="window-content">
+            <h2>Featured Projects</h2>
+            <div class="project-grid">
+                <div class="project-card">
+                    <h3>🚀 Project Alpha</h3>
+                    <p>A modern web application built with cutting-edge technologies, featuring real-time updates and an intuitive user interface.</p>
+                    <div class="project-tags">
+                        <span class="tag">React</span>
+                        <span class="tag">Node.js</span>
+                        <span class="tag">MongoDB</span>
+                        <span class="tag">WebSocket</span>
+                    </div>
+                </div>
+                <div class="project-card">
+                    <h3>💎 Project Beta</h3>
+                    <p>An elegant e-commerce platform with seamless payment integration and advanced product filtering capabilities.</p>
+                    <div class="project-tags">
+                        <span class="tag">Next.js</span>
+                        <span class="tag">TypeScript</span>
+                        <span class="tag">Stripe</span>
+                        <span class="tag">PostgreSQL</span>
+                    </div>
+                </div>
+                <div class="project-card">
+                    <h3>⚡ Project Gamma</h3>
+                    <p>A high-performance mobile app delivering exceptional user experience with native-like animations and offline capabilities.</p>
+                    <div class="project-tags">
+                        <span class="tag">React Native</span>
+                        <span class="tag">Firebase</span>
+                        <span class="tag">Redux</span>
+                        <span class="tag">TypeScript</span>
+                    </div>
+                </div>
+                <div class="project-card">
+                    <h3>🎨 Project Delta</h3>
+                    <p>A design system and component library used across multiple products, ensuring consistency and rapid development.</p>
+                    <div class="project-tags">
+                        <span class="tag">Storybook</span>
+                        <span class="tag">CSS-in-JS</span>
+                        <span class="tag">Design Tokens</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skills Window -->
+    <div class="window" id="skills-window" style="top: 140px; left: 200px; width: 650px; height: 550px;">
+        <div class="window-header">
+            <div class="window-controls">
+                <div class="window-control close" onclick="closeWindow('skills-window')"></div>
+                <div class="window-control minimize"></div>
+                <div class="window-control maximize" onclick="toggleMaximize('skills-window')"></div>
+            </div>
+            <div class="window-title">Skills & Expertise</div>
+        </div>
+        <div class="window-content">
+            <h2>Technologies I Work With</h2>
+            <div class="skills-grid">
+                <div class="skill-item">
+                    <h4>💻 Frontend Development</h4>
+                    <p>React, Vue, Next.js, TypeScript, Tailwind CSS, SASS</p>
+                </div>
+                <div class="skill-item">
+                    <h4>⚙️ Backend Development</h4>
+                    <p>Node.js, Express, Python, Django, REST APIs</p>
+                </div>
+                <div class="skill-item">
+                    <h4>📱 Mobile Development</h4>
+                    <p>React Native, Flutter, iOS, Android</p>
+                </div>
+                <div class="skill-item">
+                    <h4>🗄️ Databases</h4>
+                    <p>PostgreSQL, MongoDB, Redis, Firebase</p>
+                </div>
+                <div class="skill-item">
+                    <h4>☁️ Cloud & DevOps</h4>
+                    <p>AWS, Docker, CI/CD, Kubernetes, Vercel</p>
+                </div>
+                <div class="skill-item">
+                    <h4>🎨 UI/UX Design</h4>
+                    <p>Figma, Adobe XD, Sketch, Prototyping</p>
+                </div>
+                <div class="skill-item">
+                    <h4>🔧 Tools & Workflow</h4>
+                    <p>Git, GitHub, VS Code, Agile, Testing</p>
+                </div>
+                <div class="skill-item">
+                    <h4>🌐 Web Technologies</h4>
+                    <p>HTML5, CSS3, JavaScript, WebGL, PWA</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Window -->
+    <div class="window" id="contact-window" style="top: 160px; left: 250px; width: 500px; height: 450px;">
+        <div class="window-header">
+            <div class="window-controls">
+                <div class="window-control close" onclick="closeWindow('contact-window')"></div>
+                <div class="window-control minimize"></div>
+                <div class="window-control maximize" onclick="toggleMaximize('contact-window')"></div>
+            </div>
+            <div class="window-title">Contact</div>
+        </div>
+        <div class="window-content">
+            <h2>Get In Touch</h2>
+            <p>I'm always open to discussing new projects, creative ideas, or opportunities to be part of your vision.</p>
+            <div class="contact-links">
+                <a href="mailto:your.email@example.com" class="contact-link">
+                    <div class="contact-icon">📧</div>
+                    <div>
+                        <strong>Email</strong><br>
+                        <span style="color: var(--text-secondary); font-size: 14px;">your.email@example.com</span>
+                    </div>
+                </a>
+                <a href="https://github.com/yourusername" target="_blank" class="contact-link">
+                    <div class="contact-icon">💻</div>
+                    <div>
+                        <strong>GitHub</strong><br>
+                        <span style="color: var(--text-secondary); font-size: 14px;">@yourusername</span>
+                    </div>
+                </a>
+                <a href="https://linkedin.com/in/yourusername" target="_blank" class="contact-link">
+                    <div class="contact-icon">💼</div>
+                    <div>
+                        <strong>LinkedIn</strong><br>
+                        <span style="color: var(--text-secondary); font-size: 14px;">linkedin.com/in/yourusername</span>
+                    </div>
+                </a>
+                <a href="https://twitter.com/yourusername" target="_blank" class="contact-link">
+                    <div class="contact-icon">🐦</div>
+                    <div>
+                        <strong>Twitter</strong><br>
+                        <span style="color: var(--text-secondary); font-size: 14px;">@yourusername</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resume Window -->
+    <div class="window" id="resume-window" style="top: 80px; left: 300px; width: 600px; height: 500px;">
+        <div class="window-header">
+            <div class="window-controls">
+                <div class="window-control close" onclick="closeWindow('resume-window')"></div>
+                <div class="window-control minimize"></div>
+                <div class="window-control maximize" onclick="toggleMaximize('resume-window')"></div>
+            </div>
+            <div class="window-title">Resume</div>
+        </div>
+        <div class="window-content">
+            <h2>Experience & Education</h2>
+
+            <h3 style="margin-top: 24px;">💼 Work Experience</h3>
+            <div class="project-card">
+                <h4 style="margin-bottom: 8px;">Senior Full Stack Developer</h4>
+                <p style="margin-bottom: 8px;"><strong>Tech Company Inc.</strong> • 2021 - Present</p>
+                <p>Leading development of scalable web applications, mentoring junior developers, and architecting cloud infrastructure solutions.</p>
+            </div>
+
+            <div class="project-card" style="margin-top: 16px;">
+                <h4 style="margin-bottom: 8px;">Frontend Developer</h4>
+                <p style="margin-bottom: 8px;"><strong>Digital Agency</strong> • 2019 - 2021</p>
+                <p>Built responsive web applications for various clients, focusing on performance optimization and user experience.</p>
+            </div>
+
+            <h3 style="margin-top: 32px;">🎓 Education</h3>
+            <div class="project-card">
+                <h4 style="margin-bottom: 8px;">Bachelor of Science in Computer Science</h4>
+                <p style="margin-bottom: 8px;"><strong>University Name</strong> • 2015 - 2019</p>
+                <p>Focus on Software Engineering and Web Development</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dock -->
+    <div class="dock">
+        <div class="dock-icon" onclick="toggleWindow('about-window')" data-window="about-window">
+            <span>👤</span>
+            <div class="dock-tooltip">About</div>
+        </div>
+        <div class="dock-icon" onclick="toggleWindow('projects-window')" data-window="projects-window">
+            <span>🚀</span>
+            <div class="dock-tooltip">Projects</div>
+        </div>
+        <div class="dock-icon" onclick="toggleWindow('skills-window')" data-window="skills-window">
+            <span>💻</span>
+            <div class="dock-tooltip">Skills</div>
+        </div>
+        <div class="dock-icon" onclick="toggleWindow('resume-window')" data-window="resume-window">
+            <span>📄</span>
+            <div class="dock-tooltip">Resume</div>
+        </div>
+        <div class="dock-icon" onclick="toggleWindow('contact-window')" data-window="contact-window">
+            <span>📧</span>
+            <div class="dock-tooltip">Contact</div>
+        </div>
+    </div>
+
+    <script>
+        // Update time in menu bar
+        function updateTime() {
+            const now = new Date();
+            const options = {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            document.getElementById('current-time').textContent =
+                now.toLocaleDateString('en-US', options);
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        // Window management
+        let activeWindows = [];
+        let highestZIndex = 100;
+
+        function toggleWindow(windowId) {
+            const window = document.getElementById(windowId);
+            const dockIcon = document.querySelector(`[data-window="${windowId}"]`);
+
+            if (window.classList.contains('active')) {
+                closeWindow(windowId);
+            } else {
+                openWindow(windowId);
+            }
+        }
+
+        function openWindow(windowId) {
+            const window = document.getElementById(windowId);
+            const dockIcon = document.querySelector(`[data-window="${windowId}"]`);
+
+            window.classList.add('active');
+            window.style.zIndex = ++highestZIndex;
+            dockIcon.classList.add('active');
+
+            if (!activeWindows.includes(windowId)) {
+                activeWindows.push(windowId);
+            }
+        }
+
+        function closeWindow(windowId) {
+            const window = document.getElementById(windowId);
+            const dockIcon = document.querySelector(`[data-window="${windowId}"]`);
+
+            window.classList.remove('active');
+            window.classList.remove('maximized');
+            dockIcon.classList.remove('active');
+
+            activeWindows = activeWindows.filter(id => id !== windowId);
+        }
+
+        function toggleMaximize(windowId) {
+            const window = document.getElementById(windowId);
+            window.classList.toggle('maximized');
+        }
+
+        // Make windows draggable
+        let draggedWindow = null;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        document.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('window-header')) {
+                draggedWindow = e.target.parentElement;
+
+                if (draggedWindow.classList.contains('maximized')) {
+                    return;
+                }
+
+                draggedWindow.style.zIndex = ++highestZIndex;
+
+                const rect = draggedWindow.getBoundingClientRect();
+                offsetX = e.clientX - rect.left;
+                offsetY = e.clientY - rect.top;
+
+                draggedWindow.style.cursor = 'grabbing';
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (draggedWindow && !draggedWindow.classList.contains('maximized')) {
+                const x = e.clientX - offsetX;
+                const y = e.clientY - offsetY;
+
+                // Keep window within bounds
+                const maxX = window.innerWidth - draggedWindow.offsetWidth;
+                const maxY = window.innerHeight - draggedWindow.offsetHeight - 80;
+
+                draggedWindow.style.left = Math.max(0, Math.min(x, maxX)) + 'px';
+                draggedWindow.style.top = Math.max(28, Math.min(y, maxY)) + 'px';
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (draggedWindow) {
+                draggedWindow.style.cursor = 'default';
+                draggedWindow = null;
+            }
+        });
+
+        // Focus window on click
+        document.querySelectorAll('.window').forEach(window => {
+            window.addEventListener('mousedown', () => {
+                window.style.zIndex = ++highestZIndex;
+            });
+        });
+
+        // Prevent text selection while dragging
+        document.addEventListener('selectstart', (e) => {
+            if (draggedWindow) {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
